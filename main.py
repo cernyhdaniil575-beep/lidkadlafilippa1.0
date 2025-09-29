@@ -1,9 +1,17 @@
 from random import*
 balans_user=float(input('сколько дэпнешь?'))
+balans_user1=balans_user
 def slot_fryuts(balans):
     symbols = ['🍒', '🍋', '🍊', '🍇', '🔔', '💎']
     while True:
-        stavka=float(input('введите ставку'))
+        stavka=(input('введите ставку'))
+        if stavka=='':
+            print('eblan vvedi chislo')
+            print(balans)
+            break
+        stavka=int(stavka)
+        if stavka==0:
+            break
         while balans-stavka>=0:
             input("Нажмите Enter чтобы крутить слоты...")
             results = choices(symbols, k=5)
@@ -41,11 +49,12 @@ def slot_fryuts(balans):
             else:
                 print("Повезет в следующий раз!")
             print(f'ваш текущий баланс:',balans-stavka)
+            game=input('играем дальше?')
             balans=balans-stavka
+            balans_user1=balans
+            if game=='нет' or game=='no':
+                break
             if balans-stavka<0:
                 print('пополните баланс или понизьте ставку')
                 break
-            balans_user=balans
-slot_fryuts(balans_user)
-
-slot_fryuts(balans_user)
+slot_fryuts(balans_user1)
