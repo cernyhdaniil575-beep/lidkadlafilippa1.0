@@ -296,7 +296,42 @@
 
     <script>
         let currentBalance = 1000;
-        let lastBet = 0; // Сохраняем последнюю ставку
+        let lastBet = 0;
+
+        function checkWin(results) {
+            // Проверка на джекпот (5 одинаковых символов в ряду)
+            for (let row of results) {
+                if (new Set(row).size === 1) {
+                    return ['jackpot', 100];
+                }
+            }
+            
+            // Проверка диагональных комбинаций
+            const diagonal1 = [results[0][0], results[1][1], results[2][2], results[3][3], results[4][4]];
+            const diagonal2 = [results[0][4], results[1][3], results[2][2], results[3][1], results[4][0]];
+            
+            if (new Set(diagonal1).size === 1) {
+                return ['diagonal', 10];
+            }
+            if (new Set(diagonal2).size === 1) {
+                return ['diagonal', 10];
+            }
+            
+            return ['lose', 0];
+        }
+
+        function generateResults() {
+            const symbols = ['🍒', '🍋', '🍊', '🍇', '🔔', '💎'];
+            const results = [];
+            for (let i = 0; i < 5; i++) {
+                const row = [];
+                for (let j = 0; j < 5; j++) {
+                    row.push(symbols[Math.floor(Math.random() * symbols.length)]);
+                }
+                results.push(row);
+            }
+            return results;
+        }
 
         async function setInitialBalance() {
             const balance = parseFloat(document.getElementById('initialBalance').value);
@@ -304,28 +339,11 @@
                 alert('Введите корректную сумму!');
                 return;
             }
-
-            try {
-                const response = await fetch('/api/set_balance', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ balance: balance })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    currentBalance = data.balance;
-                    updateBalance();
-                    document.getElementById('setup-section').classList.add('hidden');
-                    document.getElementById('game-section').classList.remove('hidden');
-                    showMessage('Игра началась! Удачи!', 'info');
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Ошибка при установке баланса');
-            }
+            currentBalance = balance;
+            updateBalance();
+            document.getElementById('setup-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+            showMessage('Игра началась! Удачи!', 'info');
         }
 
         async function spin() {
@@ -335,58 +353,48 @@
                 alert('Введите корректную ставку!');
                 return;
             }
-
+            
             if (bet > currentBalance) {
                 alert('Недостаточно средств!');
                 return;
             }
-
-            // Сохраняем ставку для повторного использования
+            
             lastBet = bet;
-
-            // Блокируем кнопку и показываем загрузку
+            
             const spinBtn = document.getElementById('spinBtn');
             spinBtn.disabled = true;
             spinBtn.textContent = 'Крутим...';
             document.getElementById('game-section').classList.add('loading');
-
-            try {
-                const response = await fetch('/api/spin', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ bet: bet })
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Обновляем слоты
-                    updateSlots(data.results);
-                    
-                    // Обновляем баланс
-                    currentBalance = data.balance;
-                    updateBalance();
-                    
-                    // Показываем сообщение
-                    const messageClass = data.win_type === 'lose' ? 'lose' : 'win';
-                    showMessage(data.message, messageClass);
-                    
-                    // НЕ очищаем поле ставки - оставляем для удобства
-                    // document.getElementById('betAmount').value = '';
-                } else {
-                    alert(data.error || 'Ошибка при игре');
+            
+            // Имитируем задержку
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const results = generateResults();
+            updateSlots(results);
+            
+            currentBalance -= bet;
+            
+            const [winType, multiplier] = checkWin(results);
+            
+            if (winType !== 'lose') {
+                const winnings = bet * multiplier;
+                currentBalance += winnings;
+                let message = `Поздравляем! Вы выиграли ${winnings.toFixed(2)}!`;
+                if (winType === 'jackpot') {
+                    message = `ДЖЕКПОТ! Вы выиграли ${winnings.toFixed(2)}!`;
+                } else if (winType === 'diagonal') {
+                    message = `УДАЧА! ВАШ ВЫИГРЫШ: ${winnings.toFixed(2)}!`;
                 }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Ошибка при игре');
-            } finally {
-                // Разблокируем кнопку
-                spinBtn.disabled = false;
-                spinBtn.textContent = 'Крутить!';
-                document.getElementById('game-section').classList.remove('loading');
+                showMessage(message, 'win');
+            } else {
+                showMessage('Повезет в следующий раз!', 'lose');
             }
+            
+            updateBalance();
+            
+            spinBtn.disabled = false;
+            spinBtn.textContent = 'Крутить!';
+            document.getElementById('game-section').classList.remove('loading');
         }
 
         function updateSlots(results) {
@@ -421,7 +429,6 @@
         function repeatLastBet() {
             if (lastBet > 0) {
                 document.getElementById('betAmount').value = lastBet;
-                // Автоматически крутим слоты с сохраненной ставкой
                 spin();
             } else {
                 alert('Нет сохраненной ставки! Сначала сделайте ставку вручную.');
@@ -434,37 +441,20 @@
                 return;
             }
             document.getElementById('betAmount').value = amount;
-            // Автоматически крутим слоты с выбранной ставкой
             spin();
         }
 
-        async function resetGame() {
-            try {
-                const response = await fetch('/api/reset', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    currentBalance = data.balance;
-                    updateBalance();
-                    document.getElementById('setup-section').classList.remove('hidden');
-                    document.getElementById('game-section').classList.add('hidden');
-                    document.getElementById('initialBalance').value = '1000';
-                    document.getElementById('betAmount').value = '';
-                    lastBet = 0; // Сбрасываем сохраненную ставку
-                    showMessage('Игра сброшена!', 'info');
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Ошибка при сбросе игры');
-            }
+        function resetGame() {
+            currentBalance = 1000;
+            updateBalance();
+            document.getElementById('setup-section').classList.remove('hidden');
+            document.getElementById('game-section').classList.add('hidden');
+            document.getElementById('initialBalance').value = '1000';
+            document.getElementById('betAmount').value = '';
+            lastBet = 0;
+            showMessage('Игра сброшена!', 'info');
         }
 
-        // Загружаем баланс при загрузке страницы
         window.onload = function() {
             updateBalance();
         };
