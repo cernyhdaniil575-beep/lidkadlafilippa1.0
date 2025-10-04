@@ -2,9 +2,9 @@ name: Deploy Slot Game to GitHub Pages
 
 on:
   push:
-    branches: [ main, master, feature/web-slot-game ]
+    branches: [ master ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ master ]
 
 permissions:
   contents: read
