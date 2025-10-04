@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Слоты - Игра на деньги</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .game-container {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .balance-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .balance {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        input[type="number"] {
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            margin: 5px;
+            width: 200px;
+            text-align: center;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #f44336, #da190b);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.4);
+        }
+
+        .btn-info {
+            background: linear-gradient(45deg, #17a2b8, #138496);
+            color: white;
+        }
+
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.4);
+        }
+
+        .quick-bet-btn {
+            padding: 8px 15px;
+            font-size: 14px;
+            margin: 2px;
+            min-width: 50px;
+        }
+
+        .slots-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 3px solid #ffd700;
+        }
+
+        .slot-row {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+            gap: 10px;
+        }
+
+        .slot-symbol {
+            font-size: 3em;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            min-width: 60px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            animation: spin 0.5s ease-in-out;
+        }
+
+        @keyframes spin {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(180deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .message {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.win {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .message.lose {
+            background: linear-gradient(45deg, #f44336, #da190b);
+            color: white;
+        }
+
+        .message.info {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 20px;
+            }
+            
+            .slot-symbol {
+                font-size: 2em;
+                padding: 10px;
+                min-width: 40px;
+            }
+            
+            input[type="number"] {
+                width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎰 СЛОТЫ 🎰</h1>
+        
+        <div class="balance-section">
+            <div>Ваш баланс:</div>
+            <div class="balance" id="balance">1000.00 ₴</div>
+        </div>
+
+        <div id="setup-section">
+            <div class="input-group">
+                <input type="number" id="initialBalance" placeholder="Введите начальный баланс" value="1000" min="1">
+                <button class="btn-primary" onclick="setInitialBalance()">Установить баланс</button>
+            </div>
+        </div>
+
+        <div id="game-section" class="hidden">
+            <div class="input-group">
+                <input type="number" id="betAmount" placeholder="Введите ставку" min="1">
+                <button class="btn-primary" onclick="spin()" id="spinBtn">Крутить!</button>
+                <button class="btn-info" onclick="repeatLastBet()" id="repeatBtn" title="Повторить последнюю ставку">🔄 Повторить ставку</button>
+            </div>
+            
+            <div class="input-group">
+                <div style="margin: 10px 0; font-size: 14px; color: #ccc;">Быстрые ставки:</div>
+                <button class="btn-warning quick-bet-btn" onclick="setQuickBet(10)" title="Ставка 10">10</button>
+                <button class="btn-warning quick-bet-btn" onclick="setQuickBet(25)" title="Ставка 25">25</button>
+                <button class="btn-warning quick-bet-btn" onclick="setQuickBet(50)" title="Ставка 50">50</button>
+                <button class="btn-warning quick-bet-btn" onclick="setQuickBet(100)" title="Ставка 100">100</button>
+                <button class="btn-warning quick-bet-btn" onclick="setQuickBet(500)" title="Ставка 500">500</button>
+            </div>
+
+            <div class="slots-container">
+                <div id="slots">
+                    <div class="slot-row">
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                    </div>
+                    <div class="slot-row">
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                    </div>
+                    <div class="slot-row">
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                    </div>
+                    <div class="slot-row">
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                    </div>
+                    <div class="slot-row">
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                        <div class="slot-symbol">🎰</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="message info" id="message">Добро пожаловать! Установите ставку и крутите!</div>
+
+            <div class="controls">
+                <button class="btn-warning" onclick="resetGame()">Новая игра</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentBalance = 1000;
+        let lastBet = 0; // Сохраняем последнюю ставку
+
+        async function setInitialBalance() {
+            const balance = parseFloat(document.getElementById('initialBalance').value);
+            if (balance <= 0) {
+                alert('Введите корректную сумму!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/set_balance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ balance: balance })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    currentBalance = data.balance;
+                    updateBalance();
+                    document.getElementById('setup-section').classList.add('hidden');
+                    document.getElementById('game-section').classList.remove('hidden');
+                    showMessage('Игра началась! Удачи!', 'info');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при установке баланса');
+            }
+        }
+
+        async function spin() {
+            const bet = parseFloat(document.getElementById('betAmount').value);
+            
+            if (bet <= 0) {
+                alert('Введите корректную ставку!');
+                return;
+            }
+
+            if (bet > currentBalance) {
+                alert('Недостаточно средств!');
+                return;
+            }
+
+            // Сохраняем ставку для повторного использования
+            lastBet = bet;
+
+            // Блокируем кнопку и показываем загрузку
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = true;
+            spinBtn.textContent = 'Крутим...';
+            document.getElementById('game-section').classList.add('loading');
+
+            try {
+                const response = await fetch('/api/spin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ bet: bet })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Обновляем слоты
+                    updateSlots(data.results);
+                    
+                    // Обновляем баланс
+                    currentBalance = data.balance;
+                    updateBalance();
+                    
+                    // Показываем сообщение
+                    const messageClass = data.win_type === 'lose' ? 'lose' : 'win';
+                    showMessage(data.message, messageClass);
+                    
+                    // НЕ очищаем поле ставки - оставляем для удобства
+                    // document.getElementById('betAmount').value = '';
+                } else {
+                    alert(data.error || 'Ошибка при игре');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при игре');
+            } finally {
+                // Разблокируем кнопку
+                spinBtn.disabled = false;
+                spinBtn.textContent = 'Крутить!';
+                document.getElementById('game-section').classList.remove('loading');
+            }
+        }
+
+        function updateSlots(results) {
+            const slots = document.getElementById('slots');
+            slots.innerHTML = '';
+            
+            results.forEach(row => {
+                const slotRow = document.createElement('div');
+                slotRow.className = 'slot-row';
+                
+                row.forEach(symbol => {
+                    const slotSymbol = document.createElement('div');
+                    slotSymbol.className = 'slot-symbol';
+                    slotSymbol.textContent = symbol;
+                    slotRow.appendChild(slotSymbol);
+                });
+                
+                slots.appendChild(slotRow);
+            });
+        }
+
+        function updateBalance() {
+            document.getElementById('balance').textContent = currentBalance.toFixed(2) + ' ₴';
+        }
+
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message ${type}`;
+        }
+
+        function repeatLastBet() {
+            if (lastBet > 0) {
+                document.getElementById('betAmount').value = lastBet;
+                // Автоматически крутим слоты с сохраненной ставкой
+                spin();
+            } else {
+                alert('Нет сохраненной ставки! Сначала сделайте ставку вручную.');
+            }
+        }
+
+        function setQuickBet(amount) {
+            if (amount > currentBalance) {
+                alert('Недостаточно средств для такой ставки!');
+                return;
+            }
+            document.getElementById('betAmount').value = amount;
+            // Автоматически крутим слоты с выбранной ставкой
+            spin();
+        }
+
+        async function resetGame() {
+            try {
+                const response = await fetch('/api/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    currentBalance = data.balance;
+                    updateBalance();
+                    document.getElementById('setup-section').classList.remove('hidden');
+                    document.getElementById('game-section').classList.add('hidden');
+                    document.getElementById('initialBalance').value = '1000';
+                    document.getElementById('betAmount').value = '';
+                    lastBet = 0; // Сбрасываем сохраненную ставку
+                    showMessage('Игра сброшена!', 'info');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при сбросе игры');
+            }
+        }
+
+        // Загружаем баланс при загрузке страницы
+        window.onload = function() {
+            updateBalance();
+        };
+    </script>
+</body>
+</html>
